@@ -1,4 +1,4 @@
-name: Test tfoutdated (AWS + Azure + GCP)
+name: Test tfoutdated (HCL + CDKTF)
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: ${{ matrix.cloud }}
+  hcl:
+    name: HCL — ${{ matrix.cloud }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -41,3 +41,45 @@ jobs:
 
       - name: "Step 7: Show config AFTER fix"
         run: cat ./${{ matrix.cloud }}/main.tf
+
+  cdktf:
+    name: CDKTF — ${{ matrix.cloud }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud: [cdktf-aws, cdktf-azure]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tfoutdated
+        run: |
+          curl -sSL https://raw.githubusercontent.com/AnassKartit/tfoutdated/main/install.sh | bash
+          echo "Installed: $(tfoutdated version)"
+
+      - name: "Step 1: Show cdktf.json BEFORE"
+        run: cat ./${{ matrix.cloud }}/cdktf.json
+
+      - name: "Step 2: Show package.json BEFORE (if exists)"
+        run: cat ./${{ matrix.cloud }}/package.json 2>/dev/null || echo "No package.json"
+
+      - name: "Step 3: Scan for outdated deps"
+        run: tfoutdated scan -p ./${{ matrix.cloud }} || true
+
+      - name: "Step 4: Scan (JSON output)"
+        run: tfoutdated scan -p ./${{ matrix.cloud }} -o json 2>/dev/null | jq '.dependencies | length' || true
+
+      - name: "Step 5: Dry run fix"
+        run: tfoutdated fix --dry-run -p ./${{ matrix.cloud }}
+
+      - name: "Step 6: Apply fix"
+        run: tfoutdated fix -p ./${{ matrix.cloud }}
+
+      - name: "Step 7: Show diff"
+        run: git diff ./${{ matrix.cloud }}/
+
+      - name: "Step 8: Show cdktf.json AFTER"
+        run: cat ./${{ matrix.cloud }}/cdktf.json
+
+      - name: "Step 9: Show package.json AFTER (if exists)"
+        run: cat ./${{ matrix.cloud }}/package.json 2>/dev/null || echo "No package.json"

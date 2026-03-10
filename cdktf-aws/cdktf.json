@@ -1,0 +1,24 @@
+{
+  "language": "typescript",
+  "app": "npx ts-node main.ts",
+  "terraformProviders": [
+    "hashicorp/aws@~> 5.30"
+  ],
+  "terraformModules": [
+    {
+      "name": "eks",
+      "source": "terraform-aws-modules/eks/aws",
+      "version": "19.0.0"
+    },
+    {
+      "name": "vpc",
+      "source": "terraform-aws-modules/vpc/aws",
+      "version": "4.0.0"
+    },
+    {
+      "name": "s3_bucket",
+      "source": "terraform-aws-modules/s3-bucket/aws",
+      "version": "3.0.0"
+    }
+  ]
+}
