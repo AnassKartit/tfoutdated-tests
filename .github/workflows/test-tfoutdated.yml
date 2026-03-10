@@ -1,0 +1,59 @@
+name: Test tfoutdated (AWS + Azure + GCP)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  scan:
+    name: Scan ${{ matrix.cloud }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cloud: [aws, azure, gcp]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tfoutdated
+        run: |
+          curl -sSL https://raw.githubusercontent.com/AnassKartit/tfoutdated/main/install.sh | bash
+          tfoutdated version
+
+      - name: Scan ${{ matrix.cloud }}
+        run: tfoutdated scan -p ./${{ matrix.cloud }}
+
+      - name: Scan (JSON)
+        run: tfoutdated scan -p ./${{ matrix.cloud }} -o json | jq .
+
+      - name: Scan (Markdown)
+        run: tfoutdated scan -p ./${{ matrix.cloud }} -o markdown
+
+  fix:
+    name: Fix ${{ matrix.cloud }}
+    runs-on: ubuntu-latest
+    needs: scan
+    strategy:
+      matrix:
+        cloud: [aws, azure, gcp]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tfoutdated
+        run: |
+          curl -sSL https://raw.githubusercontent.com/AnassKartit/tfoutdated/main/install.sh | bash
+
+      - name: Show before
+        run: cat ./${{ matrix.cloud }}/main.tf
+
+      - name: Dry run
+        run: tfoutdated fix --dry-run -p ./${{ matrix.cloud }}
+
+      - name: Apply fix
+        run: tfoutdated fix -p ./${{ matrix.cloud }}
+
+      - name: Show diff
+        run: git diff ./${{ matrix.cloud }}/main.tf
+
+      - name: Show after
+        run: cat ./${{ matrix.cloud }}/main.tf
