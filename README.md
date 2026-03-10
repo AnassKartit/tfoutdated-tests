@@ -1,6 +1,6 @@
 # tfoutdated integration tests
 
-Real-world test suite for [tfoutdated](https://github.com/AnassKartit/tfoutdated) — runs `scan` and `fix` against real Terraform configs (HCL + CDKTF) across AWS, Azure, and GCP on every push.
+Real-world test suite for [tfoutdated](https://github.com/AnassKartit/tfoutdated) — runs `scan` and `fix` against HCL, CDKTF, and Terragrunt configs across AWS, Azure, and GCP on every push.
 
 ## What's tested
 
@@ -16,13 +16,20 @@ Real-world test suite for [tfoutdated](https://github.com/AnassKartit/tfoutdated
 
 | Cloud | Modules | Providers |
 |-------|---------|-----------|
-| **AWS** | EKS, VPC, S3 (via cdktf.json) | `@cdktf/provider-aws` (package.json) + `hashicorp/aws` (cdktf.json) |
-| **Azure** | VNet (AVM), ACR (AVM) (via cdktf.json) | `hashicorp/azurerm` (cdktf.json) |
+| **AWS** | EKS, VPC, S3 (via cdktf.json) | `@cdktf/provider-aws` + `hashicorp/aws` |
+| **Azure** | VNet (AVM), ACR (AVM) (via cdktf.json) | `hashicorp/azurerm` |
+
+### Terragrunt (terragrunt.hcl)
+
+| Cloud | Module | Source |
+|-------|--------|--------|
+| **AWS** | EKS | `tfr:///terraform-aws-modules/eks/aws?version=19.0.0` |
+| **Azure** | VNet (AVM) | `tfr:///Azure/avm-res-network-virtualnetwork/azurerm?version=0.7.0` |
 
 ## Workflow
 
-1. **Scan** — Detects outdated deps and breaking changes (table, JSON)
+1. **Scan** — Detects outdated deps and breaking changes
 2. **Fix** — Applies version bumps, variable renames, provider constraint updates
-3. **Diff** — Shows exactly what changed in .tf, cdktf.json, and package.json
+3. **Diff** — Shows exactly what changed in .tf, cdktf.json, package.json, and terragrunt.hcl
 
 Check the [Actions tab](../../actions) for latest results.

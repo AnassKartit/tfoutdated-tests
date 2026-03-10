@@ -1,4 +1,4 @@
-name: Test tfoutdated (HCL + CDKTF)
+name: Test tfoutdated (HCL + CDKTF + Terragrunt)
 
 on:
   push:
@@ -83,3 +83,39 @@ jobs:
 
       - name: "Step 9: Show package.json AFTER (if exists)"
         run: cat ./${{ matrix.cloud }}/package.json 2>/dev/null || echo "No package.json"
+
+  terragrunt:
+    name: Terragrunt — ${{ matrix.cloud }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud: [terragrunt-aws, terragrunt-azure]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tfoutdated
+        run: |
+          curl -sSL https://raw.githubusercontent.com/AnassKartit/tfoutdated/main/install.sh | bash
+          echo "Installed: $(tfoutdated version)"
+
+      - name: "Step 1: Show terragrunt.hcl BEFORE"
+        run: cat ./${{ matrix.cloud }}/terragrunt.hcl
+
+      - name: "Step 2: Scan for outdated deps"
+        run: tfoutdated scan -p ./${{ matrix.cloud }} || true
+
+      - name: "Step 3: Scan (JSON output)"
+        run: tfoutdated scan -p ./${{ matrix.cloud }} -o json 2>/dev/null | jq '.dependencies | length' || true
+
+      - name: "Step 4: Dry run fix"
+        run: tfoutdated fix --dry-run -p ./${{ matrix.cloud }}
+
+      - name: "Step 5: Apply fix"
+        run: tfoutdated fix -p ./${{ matrix.cloud }}
+
+      - name: "Step 6: Show diff"
+        run: git diff ./${{ matrix.cloud }}/terragrunt.hcl
+
+      - name: "Step 7: Show terragrunt.hcl AFTER"
+        run: cat ./${{ matrix.cloud }}/terragrunt.hcl
